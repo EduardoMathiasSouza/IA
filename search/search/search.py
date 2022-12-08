@@ -79,15 +79,9 @@ def buildActions(node, parent):
 
 def graphSearchWithoutCosts(problem, fringe):
 
-    # Dict to track who is the parent of each node
-    # parent[node1] = node2 means that the parent of node1 is node2
     parent = dict()
-    # Set of closed states (states that have already been visited)
     closed = set()
 
-    # Insert starting node into the fringe
-    # Note that a node is a tuple consisting of a state, an action and a cost
-    # node[0] = state, node[1] = action, node[2] = cost
     start_state = problem.getStartState()
     start_action = None
     start_cost = 0
@@ -114,19 +108,14 @@ def graphSearchWithoutCosts(problem, fringe):
 
 def graphSearchWithCosts(problem, heuristic):
 
-    # Dict to track who is the parent of each node
-    # parent[node1] = node2 means that the parent of node1 is node2
-    parent = {}
-    # Set of closed states (states that have already been visited)
+    
+    parent = dict()
     closed = set()
-    # Dict to track the cost of each node
-    cost = {}
+
+    cost = dict()
     fringe = util.PriorityQueue()
 
-    # Insert starting node into the fringe
-    # Note that a node is a tuple consisting of a state and an action
-    # while the cost is the priority of this item
-    # node[0] = state, node[1] = action, node[2] = cost
+    
     start_state = problem.getStartState()
     start_action = None
     start_cost = 0
@@ -149,7 +138,7 @@ def graphSearchWithCosts(problem, heuristic):
                 if successor_state not in closed:
                     g = cost[state] + successor_cost
                     h = heuristic(successor_state, problem)
-                    # To understand why this works, check how update function acts
+                    
                     fringe.update(successor[:2], g+h)
                     cost[successor_state] = g
                     parent[successor[:2]] = node
