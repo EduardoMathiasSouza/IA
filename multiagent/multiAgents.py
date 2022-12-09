@@ -13,11 +13,39 @@
 
 
 from util import manhattanDistance
-from game import Directions
+from game import Directions, Actions
 import random, util
 
 from game import Agent
 from pacman import GameState
+
+def CID(currentGameState, items):
+    walls = currentGameState.getWalls()
+
+    start = currentGameState.getPacmanPosition()
+    dist = {start: 0}
+
+    visited = {start}
+
+    queue = util.Queue()
+    queue.push(start)
+
+    while not queue.isEmpty():
+        pos = x, y = queue.pop()
+
+        if pos in items: return dist[pos]
+
+        for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
+            dx, dy = Actions.directionToVector(action)
+            next_pos = nextx, nexty = int(x + dx), int(y + dy)
+
+            if not walls[nextx][nexty] and next_pos not in visited:
+                queue.push(next_pos)
+                visited.add(next_pos)
+                dist[next_pos] = dist[pos] + 1
+
+    return None
+
 
 class ReflexAgent(Agent):
     """
@@ -242,16 +270,51 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
     """
       Your expectimax agent (question 4)
     """
+    def maxValue(self, gameState, agent, depth):
+        max_value = float("-inf")
+        for action in gameState.getLegalActions(agent):
+            successor = gameState.generateSuccessor(agent, action)
+            v = self.expectimax(successor, agent+1, depth)
+            max_value = max(max_value, v)
+            if depth == 1 and max_value == v: self.action = action
+        return max_value
 
-    def getAction(self, gameState: GameState):
+    def probability(self, legalActions):
+        return 1.0 / len(legalActions)
+
+    def expValue(self, gameState, agent, depth):
+        legalActions = gameState.getLegalActions(agent)
+        v = 0
+        for action in legalActions:
+            successor = gameState.generateSuccessor(agent, action)
+            p = self.probability(legalActions)
+            v += p * self.expectimax(successor, agent+1, depth)
+        return v
+
+    def expectimax(self, gameState, agent=0, depth=0):
+
+        agent = agent % gameState.getNumAgents()
+
+        if self.isTerminalState(gameState):
+            return self.evaluationFunction(gameState)
+
+        if self.isPacman(agent):
+            if depth < self.depth:
+                return self.maxValue(gameState, agent, depth+1)
+            else:
+                return self.evaluationFunction(gameState)
+        else:
+            return self.expValue(gameState, agent, depth)
+
+    def getAction(self, gameState):
         """
-        Returns the expectimax action using self.depth and self.evaluationFunction
-
-        All ghosts should be modeled as choosing uniformly at random from their
-        legal moves.
+          Returns the expectimax action using self.depth and self.evaluationFunction
+          All ghosts should be modeled as choosing uniformly at random from their
+          legal moves.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        self.expectimax(gameState)
+        return self.action
 
 def betterEvaluationFunction(currentGameState: GameState):
     """
@@ -261,7 +324,33 @@ def betterEvaluationFunction(currentGameState: GameState):
     DESCRIPTION: <write something here so we know what you did>
     """
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    infinity = float('inf')
+    position = currentGameState.getPacmanPosition()
+    score = currentGameState.getScore()
+    ghostStates = currentGameState.getGhostStates()
+    foodList = currentGameState.getFood().asList()
+    capsuleList = currentGameState.getCapsules()
+
+    if currentGameState.isWin(): 
+        return infinity
+    if currentGameState.isLose(): 
+        return -infinity
+
+    for ghost in ghostStates:
+        dist = manhattanDistance(position, ghost.getPosition())
+        if ghost.scaredTimer > 6 and dist < 2:
+            return infinity
+        elif ghost.scaredTimer < 5 and dist < 2:
+            return -infinity
+
+    foodDistance = 1.0/CID(currentGameState, foodList)
+    capsuleDistance = CID(currentGameState, capsuleList)
+    if capsuleDistance is None:
+        capsuleDistance = 0.0 
+    else:
+        capsuleDistance= 1.0/capsuleDistance
+
+    return 10.0*foodDistance + 5.0*score + 0.5*capsuleDistance
 
 # Abbreviation
 better = betterEvaluationFunction
