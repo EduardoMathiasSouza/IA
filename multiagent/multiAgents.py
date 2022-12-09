@@ -195,13 +195,48 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
     """
     Your minimax agent with alpha-beta pruning (question 3)
     """
+    def maxValue(self, gameState, agent, depth, alpha, beta):
+        max_value = float("-inf")
+        for action in gameState.getLegalActions(agent):
+            successor = gameState.generateSuccessor(agent, action)
+            v = self.minimax(successor, agent + 1, depth, alpha, beta)
+            max_value = max(max_value, v)
+            if depth == 1 and max_value == v: 
+                self.action = action
+            if max_value > beta: 
+                return max_value
+            alpha = max(alpha, max_value)
+        return max_value
 
-    def getAction(self, gameState: GameState):
+    def minValue(self, gameState, agent, depth, alpha, beta):
+        min_value = float("inf")
+        for action in gameState.getLegalActions(agent):
+            successor = gameState.generateSuccessor(agent, action)
+            v = self.minimax(successor, agent + 1, depth, alpha, beta)
+            min_value = min(min_value, v)
+            if min_value < alpha: return min_value
+            beta = min(beta, min_value)
+        return min_value
+
+    def minimax(self, gameState, agent=0, depth=0,alpha=float("-inf"), beta=float("inf")):
+        agent = agent % gameState.getNumAgents()
+        if self.isTerminalState(gameState):
+            return self.evaluationFunction(gameState)
+        if self.isPacman(agent):
+            if depth < self.depth:
+                return self.maxValue(gameState, agent, depth+1, alpha, beta)
+            else:
+                return self.evaluationFunction(gameState)
+        else:
+            return self.minValue(gameState, agent, depth, alpha, beta)
+
+    def getAction(self, gameState):
         """
-        Returns the minimax action using self.depth and self.evaluationFunction
+          Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        self.minimax(gameState)
+        return self.action
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
